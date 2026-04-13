@@ -56,6 +56,53 @@ export async function randomMeal(): Promise<MealDetail> {
   return normalizeMeal(data.meals[0]);
 }
 
+/**
+ * Fetches N random meals in parallel, deduping by id (TheMealDB can repeat).
+ * May return fewer than N if the API errors or collides.
+ */
+export async function randomMeals(n: number): Promise<MealDetail[]> {
+  const results = await Promise.allSettled(
+    Array.from({ length: n }, () => randomMeal()),
+  );
+  const seen = new Set<string>();
+  const unique: MealDetail[] = [];
+  for (const r of results) {
+    if (r.status !== "fulfilled") continue;
+    if (seen.has(r.value.id)) continue;
+    seen.add(r.value.id);
+    unique.push(r.value);
+  }
+  return unique;
+}
+
+export type CategoryDetail = {
+  id: string;
+  name: string;
+  thumbnail: string;
+  description: string;
+};
+
+/**
+ * Full category list with thumbnails (for the home-page categories grid).
+ * TheMealDB exposes this on /categories.php (not /list.php).
+ */
+export async function listCategoriesDetailed(): Promise<CategoryDetail[]> {
+  const data = await fetchMealDb<{
+    categories: Array<{
+      idCategory: string;
+      strCategory: string;
+      strCategoryThumb: string;
+      strCategoryDescription: string;
+    }>;
+  }>(`/categories.php`, CATALOG_CACHE);
+  return data.categories.map((c) => ({
+    id: c.idCategory,
+    name: c.strCategory,
+    thumbnail: c.strCategoryThumb,
+    description: c.strCategoryDescription,
+  }));
+}
+
 export async function filterByCategory(category: string): Promise<MealPreview[]> {
   const data = await fetchMealDb<{ meals: RawMealPreview[] | null }>(
     `/filter.php?c=${encodeURIComponent(category)}`,
