@@ -14,7 +14,7 @@ export function GetStartedButton() {
     <button
       type="button"
       onClick={() => clerk.openSignUp()}
-      className="inline-flex items-center justify-center rounded-full bg-accent text-white px-6 h-11 text-sm font-medium hover:opacity-90"
+      className="inline-flex items-center justify-center rounded-full bg-accent text-accent-fg px-6 h-11 text-sm font-medium hover:opacity-90"
     >
       Get started
     </button>

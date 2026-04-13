@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
-/* Trattoria warm theme: terracotta + olive + cream */
+/* Monograph theme: monospace headings, near-monochrome palette.
+ * Accent tracks foreground so primary buttons are dark-on-light and
+ * automatically invert to light-on-dark in dark mode. */
 :root {
-  --background: #fbf5e9;    /* cream */
-  --foreground: #2d251b;    /* warm dark brown, high contrast on cream */
-  --accent: #b8461e;        /* terracotta */
-  --accent-fg: #ffffff;
-  --secondary: #606c38;     /* olive green */
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --accent: #0a0a0a;
+  --accent-fg: #fafafa;
+  --secondary: #525252;
 }
 
 @theme inline {
@@ -18,15 +20,16 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display:
-    var(--font-fraunces), var(--font-geist-sans), ui-serif, Georgia, serif;
+    var(--font-geist-mono), ui-monospace, "SF Mono", "Menlo", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1e1a14;    /* warm dark brown */
-    --foreground: #ede4d0;    /* soft cream on dark */
-    --accent: #d4603c;        /* terracotta, lifted for dark mode */
-    --secondary: #8a9b5a;     /* olive, lifted */
+    --background: #0a0a0a;
+    --foreground: #fafafa;
+    --accent: #fafafa;
+    --accent-fg: #0a0a0a;
+    --secondary: #a3a3a3;
   }
 }
 

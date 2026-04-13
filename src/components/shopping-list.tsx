@@ -78,7 +78,7 @@ export function ShoppingList({ items, pantryNames = [] }: Props) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-accent text-white px-4 h-9 text-sm font-medium hover:opacity-90 disabled:opacity-60"
+          className="rounded-full bg-accent text-accent-fg px-4 h-9 text-sm font-medium hover:opacity-90 disabled:opacity-60"
         >
           Add
         </button>

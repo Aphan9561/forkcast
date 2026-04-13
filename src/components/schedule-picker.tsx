@@ -138,7 +138,7 @@ export function SchedulePicker({
               <button
                 type="submit"
                 disabled={pending}
-                className="text-sm px-3 py-1.5 rounded-full bg-accent text-white hover:opacity-90 disabled:opacity-60"
+                className="text-sm px-3 py-1.5 rounded-full bg-accent text-accent-fg hover:opacity-90 disabled:opacity-60"
               >
                 {pending ? "Saving…" : "Schedule"}
               </button>
