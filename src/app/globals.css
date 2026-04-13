@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
-/* Monograph theme: monospace headings, near-monochrome palette.
- * Accent tracks foreground so primary buttons are dark-on-light and
- * automatically invert to light-on-dark in dark mode. */
+/* Monograph theme: monospace headings, near-monochrome palette
+ * with a forest-green accent for primary CTAs and active states.
+ * accent-fg stays white in both modes (white text reads well on
+ * both the deep and lifted greens). */
 :root {
   --background: #fafafa;
   --foreground: #0a0a0a;
-  --accent: #0a0a0a;
-  --accent-fg: #fafafa;
+  --accent: #2e5c3f;     /* forest green */
+  --accent-fg: #ffffff;
   --secondary: #525252;
 }
 
@@ -27,8 +28,8 @@
   :root {
     --background: #0a0a0a;
     --foreground: #fafafa;
-    --accent: #fafafa;
-    --accent-fg: #0a0a0a;
+    --accent: #4a8862;   /* forest green, lifted for dark mode */
+    --accent-fg: #ffffff;
     --secondary: #a3a3a3;
   }
 }
