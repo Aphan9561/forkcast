@@ -1,3 +1,4 @@
+import { SignUpButton } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,10 +13,20 @@ export default async function Home() {
   const session = await auth();
   const recommendations = session.userId ? await getRecommendations(6) : [];
 
+  if (session.userId) {
+    return (
+      <main className="flex-1 w-full">
+        <Dashboard userId={session.userId} />
+        {recommendations.length > 0 && <Recommended meals={recommendations} />}
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 w-full">
-      {session.userId ? <Dashboard userId={session.userId} /> : <Hero />}
-      {recommendations.length > 0 && <Recommended meals={recommendations} />}
+      <Hero />
+      <Features />
+      <FinalCTA />
     </main>
   );
 }
@@ -181,6 +192,99 @@ function StatChip({ label, href }: { label: string; href: string }) {
     >
       {label}
     </Link>
+  );
+}
+
+const FEATURES = [
+  {
+    icon: "🔍",
+    title: "Discover recipes",
+    desc: "Browse meals from TheMealDB — filter by category or cuisine.",
+  },
+  {
+    icon: "❤️",
+    title: "Save favorites",
+    desc: "Tag and organize the meals you want to cook again.",
+  },
+  {
+    icon: "📅",
+    title: "Plan your week",
+    desc: "Schedule meals into breakfast, lunch, dinner, and snack slots.",
+  },
+  {
+    icon: "🛒",
+    title: "Smart shopping lists",
+    desc: "Auto-generate ingredients from your plan.",
+  },
+  {
+    icon: "🥫",
+    title: "Track your pantry",
+    desc: "Mark what you have so the list doesn't double up.",
+  },
+  {
+    icon: "🎲",
+    title: "Surprise me",
+    desc: "One click, one random meal idea. Great for indecisive nights.",
+  },
+] as const;
+
+function Features() {
+  return (
+    <section className="max-w-5xl mx-auto px-6 py-16">
+      <div className="text-center mb-12">
+        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-3">
+          Everything you need to cook more at home.
+        </h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto">
+          Forkcast ties your recipes, meal plan, and shopping list together in
+          one place.
+        </p>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {FEATURES.map((f) => (
+          <div
+            key={f.title}
+            className="p-5 rounded-lg border border-black/[.06] dark:border-white/10 bg-white dark:bg-zinc-950"
+          >
+            <div className="text-3xl mb-3" aria-hidden>
+              {f.icon}
+            </div>
+            <h3 className="font-medium mb-1">{f.title}</h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              {f.desc}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FinalCTA() {
+  return (
+    <section className="border-t border-black/5 dark:border-white/10 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-rose-950/20">
+      <div className="max-w-3xl mx-auto px-6 py-16 text-center">
+        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-3">
+          Ready to plan your week?
+        </h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+          Sign up free. No credit card, no catch.
+        </p>
+        <div className="flex gap-3 justify-center flex-wrap">
+          <SignUpButton mode="modal">
+            <button className="inline-flex items-center justify-center rounded-full bg-foreground text-background px-6 h-11 text-sm font-medium hover:opacity-90">
+              Get started
+            </button>
+          </SignUpButton>
+          <Link
+            href="/browse"
+            className="inline-flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 px-6 h-11 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            Or browse meals first
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
 
