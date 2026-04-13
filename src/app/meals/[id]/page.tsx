@@ -7,6 +7,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { SchedulePicker } from "@/components/schedule-picker";
 import { getFavoriteStatus } from "@/lib/data/favorites";
 import { lookupMeal } from "@/lib/mealdb/client";
+import { parseInstructionSteps } from "@/lib/mealdb/normalize";
 
 export default async function MealPage({
   params,
@@ -20,6 +21,7 @@ export default async function MealPage({
   const favorited = userId ? await getFavoriteStatus(meal.id) : false;
 
   const youtubeId = meal.youtubeUrl ? extractYoutubeId(meal.youtubeUrl) : null;
+  const steps = parseInstructionSteps(meal.instructions);
 
   return (
     <article className="flex-1 max-w-4xl mx-auto px-6 py-8 w-full">
@@ -86,9 +88,17 @@ export default async function MealPage({
 
       <section className="mb-8">
         <h2 className="font-semibold mb-3">Instructions</h2>
-        <div className="whitespace-pre-line text-sm leading-6 text-zinc-800 dark:text-zinc-200">
-          {meal.instructions}
-        </div>
+        {steps.length > 0 ? (
+          <ol className="list-decimal pl-5 space-y-2 text-sm leading-6 text-zinc-800 dark:text-zinc-200 marker:text-zinc-400">
+            {steps.map((step, i) => (
+              <li key={i} className="pl-1">
+                {step}
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="text-sm text-zinc-500">No instructions available.</p>
+        )}
       </section>
 
       {youtubeId && (
