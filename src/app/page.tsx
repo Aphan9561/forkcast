@@ -37,10 +37,10 @@ function Hero() {
             Browse meals
           </Link>
           <Link
-            href="/plan"
+            href="/surprise"
             className="inline-flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 px-5 h-10 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10"
           >
-            Your meal plan
+            Surprise me
           </Link>
         </div>
       </div>
@@ -91,10 +91,24 @@ async function Dashboard({ userId: _userId }: { userId: string }) {
   return (
     <section className="border-b border-black/5 dark:border-white/10">
       <div className="max-w-5xl mx-auto px-6 py-10">
-        <h1 className="text-2xl font-semibold tracking-tight mb-1">
-          Hi, {greeting}.
-        </h1>
-        <p className="text-sm text-zinc-500 mb-6">Here&apos;s your week at a glance.</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight mb-1">
+              Hi, {greeting}.
+            </h1>
+            <p className="text-sm text-zinc-500">
+              Here&apos;s your week at a glance.
+            </p>
+          </div>
+          <Link
+            href="/surprise"
+            className="inline-flex items-center gap-1.5 rounded-full border border-black/10 dark:border-white/15 px-4 h-9 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10"
+            title="Jump to a random meal"
+          >
+            <span aria-hidden>🎲</span>
+            Surprise me
+          </Link>
+        </div>
 
         <div className="flex flex-wrap gap-2 mb-8">
           <StatChip
