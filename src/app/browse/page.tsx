@@ -57,21 +57,38 @@ export default async function BrowsePage({
 }
 
 /**
- * Picks a letter of the alphabet seeded by the current hour (UTC), so the
- * discover set rotates hourly while Next's fetch cache still hits within an
- * hour. First-letter search returns ~20 full meals per call.
+ * Picks three letters seeded by the current hour (UTC) and merges the
+ * results. Fetching multiple letters avoids the sparse-letter problem
+ * (u, q, w, x, y, z return 0–1 meals each, which left the page nearly
+ * empty on those hours). Offsets are relatively prime to 26 so the trio
+ * always mixes a high-density letter.
  */
 async function fetchDiscoverMeals(): Promise<MealPreview[]> {
   const hour = new Date().getUTCHours();
-  const letter = "abcdefghijklmnopqrstuvwxyz"[hour % 26];
-  const meals = await searchByFirstLetter(letter);
-  return meals.map((m) => ({
-    id: m.id,
-    name: m.name,
-    thumbnail: m.thumbnail,
-    category: m.category,
-    area: m.area,
-  }));
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+  const letters = [
+    alphabet[hour % 26],
+    alphabet[(hour + 9) % 26],
+    alphabet[(hour + 17) % 26],
+  ];
+
+  const results = await Promise.all(letters.map((l) => searchByFirstLetter(l)));
+  const seen = new Set<string>();
+  const merged: MealPreview[] = [];
+  for (const arr of results) {
+    for (const m of arr) {
+      if (seen.has(m.id)) continue;
+      seen.add(m.id);
+      merged.push({
+        id: m.id,
+        name: m.name,
+        thumbnail: m.thumbnail,
+        category: m.category,
+        area: m.area,
+      });
+    }
+  }
+  return merged;
 }
 
 async function fetchBrowseResults({
