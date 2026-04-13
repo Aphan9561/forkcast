@@ -3,16 +3,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { MealCard } from "@/components/meal-card";
 import { addDaysISO, todayISO } from "@/lib/data/meal-plans";
+import { getRecommendations } from "@/lib/data/recommendations";
 import { lookupMeal, randomMeals } from "@/lib/mealdb/client";
-import type { MealDetail } from "@/lib/mealdb/types";
+import type { MealDetail, MealPreview } from "@/lib/mealdb/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function Home() {
-  const [featured, session] = await Promise.all([randomMeals(6), auth()]);
+  const session = await auth();
+  const [featured, recommendations] = await Promise.all([
+    randomMeals(6),
+    session.userId ? getRecommendations(6) : Promise.resolve([]),
+  ]);
 
   return (
     <main className="flex-1 w-full">
       {session.userId ? <Dashboard userId={session.userId} /> : <Hero />}
+      {recommendations.length > 0 && <Recommended meals={recommendations} />}
       <FeaturedMeals meals={featured} />
     </main>
   );
@@ -179,6 +185,32 @@ function StatChip({ label, href }: { label: string; href: string }) {
     >
       {label}
     </Link>
+  );
+}
+
+function Recommended({ meals }: { meals: MealPreview[] }) {
+  return (
+    <section className="max-w-5xl mx-auto px-6 py-10 border-b border-black/5 dark:border-white/10">
+      <div className="flex items-baseline justify-between mb-1">
+        <h2 className="text-lg font-semibold tracking-tight">
+          Recommended for you
+        </h2>
+        <Link
+          href="/favorites"
+          className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white underline-offset-2 hover:underline"
+        >
+          Your favorites →
+        </Link>
+      </div>
+      <p className="text-xs text-zinc-500 mb-4">
+        Picked from categories and cuisines you&apos;ve favorited before.
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {meals.map((m) => (
+          <MealCard key={m.id} meal={m} />
+        ))}
+      </div>
+    </section>
   );
 }
 
