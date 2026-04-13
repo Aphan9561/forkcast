@@ -54,3 +54,77 @@ export function todayISO(): string {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${dd}`;
 }
+
+// ---------- Month helpers (for the /plan month view) ----------
+
+/** Returns the YYYY-MM of the given date in local time. */
+export function monthOf(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Shifts a YYYY-MM by `months` (may be negative). */
+export function addMonthsISO(yearMonth: string, months: number): string {
+  const [y, m] = yearMonth.split("-").map(Number);
+  const d = new Date(y, m - 1 + months, 1);
+  return monthOf(d);
+}
+
+/**
+ * Returns per-day counts of scheduled meals for the given month.
+ * Map key is a YYYY-MM-DD string; value is the number of meal_plans rows.
+ */
+export async function listMonthCounts(
+  yearMonth: string,
+): Promise<Map<string, number>> {
+  await requireUser();
+  const sb = await createSupabaseServerClient();
+  const [y, m] = yearMonth.split("-").map(Number);
+  const start = `${yearMonth}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const end = `${yearMonth}-${String(lastDay).padStart(2, "0")}`;
+
+  const { data, error } = await sb
+    .from("meal_plans")
+    .select("planned_for")
+    .gte("planned_for", start)
+    .lte("planned_for", end);
+  if (error) throw error;
+
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    counts.set(row.planned_for, (counts.get(row.planned_for) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/**
+ * Builds a 6-row × 7-column calendar grid for the given month, starting on
+ * Monday. Leading/trailing days from adjacent months are included and flagged
+ * with `inMonth: false` so the caller can render them muted.
+ */
+export function buildMonthGrid(
+  yearMonth: string,
+): { iso: string; day: number; inMonth: boolean }[] {
+  const [y, m] = yearMonth.split("-").map(Number);
+  const firstOfMonth = new Date(y, m - 1, 1);
+  // Monday=0 ... Sunday=6 (shift JS's Sunday=0 scheme)
+  const leadingEmpty = (firstOfMonth.getDay() + 6) % 7;
+
+  const cells: { iso: string; day: number; inMonth: boolean }[] = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(y, m - 1, 1 - leadingEmpty + i);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    cells.push({
+      iso,
+      day: d.getDate(),
+      inMonth: d.getMonth() === m - 1,
+    });
+  }
+  return cells;
+}
+
+/** Monday of the week containing the given YYYY-MM-DD. */
+export function mondayOfISO(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  return mondayOf(d);
+}
