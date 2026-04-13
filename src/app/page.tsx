@@ -262,7 +262,7 @@ function Features() {
 
 function FinalCTA() {
   return (
-    <section className="border-t border-black/5 dark:border-white/10 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-rose-950/20">
+    <section className="border-t border-black/5 dark:border-white/10 bg-gradient-to-br from-orange-100/70 via-amber-50 to-stone-100 dark:from-orange-950/30 dark:via-amber-950/20 dark:to-stone-900/60">
       <div className="max-w-3xl mx-auto px-6 py-16 text-center">
         <h2 className="text-2xl sm:text-3xl font-display font-semibold tracking-tight mb-3">
           Ready to plan your week?

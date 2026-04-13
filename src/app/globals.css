@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
+/* Trattoria warm theme: terracotta + olive + cream */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --accent: #f97316; /* orange-500 */
+  --background: #fbf5e9;    /* cream */
+  --foreground: #2d251b;    /* warm dark brown, high contrast on cream */
+  --accent: #b8461e;        /* terracotta */
   --accent-fg: #ffffff;
+  --secondary: #606c38;     /* olive green */
 }
 
 @theme inline {
@@ -12,17 +14,19 @@
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
+  --color-secondary: var(--secondary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display:
-    var(--font-bricolage), var(--font-geist-sans), system-ui, sans-serif;
+    var(--font-fraunces), var(--font-geist-sans), ui-serif, Georgia, serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --accent: #fb923c; /* orange-400, lifted for dark mode legibility */
+    --background: #1e1a14;    /* warm dark brown */
+    --foreground: #ede4d0;    /* soft cream on dark */
+    --accent: #d4603c;        /* terracotta, lifted for dark mode */
+    --secondary: #8a9b5a;     /* olive, lifted */
   }
 }
 
