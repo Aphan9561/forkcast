@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FavoriteButton } from "@/components/favorite-button";
+import { SchedulePicker } from "@/components/schedule-picker";
 import { getFavoriteStatus } from "@/lib/data/favorites";
 import { lookupMeal } from "@/lib/mealdb/client";
 
@@ -55,7 +56,11 @@ export default async function MealPage({
               initialFavorited={favorited}
               signedIn={Boolean(userId)}
             />
-            {/* Schedule button arrives in a later increment. */}
+            <SchedulePicker
+              mealId={meal.id}
+              mealName={meal.name}
+              signedIn={Boolean(userId)}
+            />
           </div>
         </div>
       </div>
