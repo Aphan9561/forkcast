@@ -1,7 +1,7 @@
-import { SignUpButton } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
+import { GetStartedButton } from "@/components/get-started-button";
 import { MealCard } from "@/components/meal-card";
 import { addDaysISO, todayISO } from "@/lib/data/meal-plans";
 import { getRecommendations } from "@/lib/data/recommendations";
@@ -271,11 +271,7 @@ function FinalCTA() {
           Sign up free. No credit card, no catch.
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
-          <SignUpButton mode="modal">
-            <button className="inline-flex items-center justify-center rounded-full bg-foreground text-background px-6 h-11 text-sm font-medium hover:opacity-90">
-              Get started
-            </button>
-          </SignUpButton>
+          <GetStartedButton />
           <Link
             href="/browse"
             className="inline-flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 px-6 h-11 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10"
