@@ -9,10 +9,18 @@ import {
 } from "@/app/actions/shopping";
 import type { ShoppingItemRow } from "@/lib/data/shopping";
 
-export function ShoppingList({ items }: { items: ShoppingItemRow[] }) {
+type Props = {
+  items: ShoppingItemRow[];
+  /** Lowercased pantry item names — items with matching names get an
+   *  "in pantry" chip so the user knows they already have it. */
+  pantryNames?: string[];
+};
+
+export function ShoppingList({ items, pantryNames = [] }: Props) {
   const [pending, startTransition] = useTransition();
   const unchecked = items.filter((i) => !i.checked);
   const checked = items.filter((i) => i.checked);
+  const pantrySet = new Set(pantryNames);
 
   function onAdd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -72,7 +80,11 @@ export function ShoppingList({ items }: { items: ShoppingItemRow[] }) {
       {unchecked.length > 0 && (
         <ul className="divide-y divide-black/5 dark:divide-white/10 border-y border-black/5 dark:border-white/10 mb-6">
           {unchecked.map((item) => (
-            <Row key={item.id} item={item} />
+            <Row
+              key={item.id}
+              item={item}
+              inPantry={pantrySet.has(item.name.toLowerCase())}
+            />
           ))}
         </ul>
       )}
@@ -94,7 +106,11 @@ export function ShoppingList({ items }: { items: ShoppingItemRow[] }) {
           </div>
           <ul className="divide-y divide-black/5 dark:divide-white/10 border-y border-black/5 dark:border-white/10 opacity-60">
             {checked.map((item) => (
-              <Row key={item.id} item={item} />
+              <Row
+              key={item.id}
+              item={item}
+              inPantry={pantrySet.has(item.name.toLowerCase())}
+            />
             ))}
           </ul>
         </>
@@ -103,7 +119,13 @@ export function ShoppingList({ items }: { items: ShoppingItemRow[] }) {
   );
 }
 
-function Row({ item }: { item: ShoppingItemRow }) {
+function Row({
+  item,
+  inPantry,
+}: {
+  item: ShoppingItemRow;
+  inPantry: boolean;
+}) {
   const [, startTransition] = useTransition();
   const amount =
     item.quantity != null
@@ -123,6 +145,14 @@ function Row({ item }: { item: ShoppingItemRow }) {
         className={`flex-1 text-sm ${item.checked ? "line-through" : ""}`}
       >
         {item.name}
+        {inPantry && (
+          <span
+            className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 align-middle"
+            title="This item is also in your pantry"
+          >
+            in pantry
+          </span>
+        )}
       </span>
       {amount && (
         <span className="text-sm text-zinc-500 text-right">{amount}</span>
