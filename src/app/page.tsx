@@ -199,7 +199,13 @@ function FeaturedMeals({ meals }: { meals: MealDetail[] }) {
         {meals.map((m) => (
           <MealCard
             key={m.id}
-            meal={{ id: m.id, name: m.name, thumbnail: m.thumbnail }}
+            meal={{
+              id: m.id,
+              name: m.name,
+              thumbnail: m.thumbnail,
+              category: m.category,
+              area: m.area,
+            }}
           />
         ))}
       </div>

@@ -60,9 +60,18 @@ export default async function FavoritesPage() {
                 >
                   {f.meal.name}
                 </Link>
-                <p className="text-xs text-zinc-500">
-                  {f.meal.category} · {f.meal.area}
-                </p>
+                <div className="flex flex-wrap gap-1">
+                  {f.meal.category && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                      {f.meal.category}
+                    </span>
+                  )}
+                  {f.meal.area && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                      {f.meal.area}
+                    </span>
+                  )}
+                </div>
                 <TagPicker
                   mealId={f.meal_id}
                   assigned={f.tags}

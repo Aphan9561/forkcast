@@ -108,7 +108,13 @@ export async function filterByCategory(category: string): Promise<MealPreview[]>
     `/filter.php?c=${encodeURIComponent(category)}`,
     SEARCH_CACHE,
   );
-  return (data.meals ?? []).map(normalizePreview);
+  // filter.php returns stripped previews. Since every result shares the filter
+  // category, we inject it here so downstream UI can show a category chip
+  // without a second lookup round-trip.
+  return (data.meals ?? []).map((raw) => ({
+    ...normalizePreview(raw),
+    category,
+  }));
 }
 
 export async function filterByArea(area: string): Promise<MealPreview[]> {
@@ -116,7 +122,10 @@ export async function filterByArea(area: string): Promise<MealPreview[]> {
     `/filter.php?a=${encodeURIComponent(area)}`,
     SEARCH_CACHE,
   );
-  return (data.meals ?? []).map(normalizePreview);
+  return (data.meals ?? []).map((raw) => ({
+    ...normalizePreview(raw),
+    area,
+  }));
 }
 
 export async function filterByIngredient(ingredient: string): Promise<MealPreview[]> {
@@ -152,13 +161,28 @@ export async function listIngredients(): Promise<string[]> {
 }
 
 /**
- * Intersect meal-preview arrays by id.
- * Used to client-side AND multiple filters (TheMealDB has no multi-filter endpoint).
+ * Intersect meal-preview arrays by id, merging category/area enrichments
+ * across sources (first non-empty value wins).
+ *
+ * Used to client-side AND multiple filters (TheMealDB has no multi-filter
+ * endpoint). When a user picks category=Seafood AND area=Italian, each array
+ * carries its own injected tag; the merge keeps both on the result.
  */
 export function intersectMeals(...arrays: MealPreview[][]): MealPreview[] {
   if (arrays.length === 0) return [];
   if (arrays.length === 1) return arrays[0];
   const [first, ...rest] = arrays;
-  const otherIdSets = rest.map((a) => new Set(a.map((m) => m.id)));
-  return first.filter((m) => otherIdSets.every((s) => s.has(m.id)));
+  const others = rest.map((a) => new Map(a.map((m) => [m.id, m])));
+  return first
+    .filter((m) => others.every((byId) => byId.has(m.id)))
+    .map((m) => {
+      const peers = [m, ...others.map((byId) => byId.get(m.id)!)];
+      return {
+        id: m.id,
+        name: m.name,
+        thumbnail: m.thumbnail,
+        category: peers.find((p) => p.category)?.category,
+        area: peers.find((p) => p.area)?.area,
+      };
+    });
 }

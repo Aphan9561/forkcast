@@ -65,7 +65,13 @@ async function fetchDiscoverMeals(): Promise<MealPreview[]> {
   const hour = new Date().getUTCHours();
   const letter = "abcdefghijklmnopqrstuvwxyz"[hour % 26];
   const meals = await searchByFirstLetter(letter);
-  return meals.map((m) => ({ id: m.id, name: m.name, thumbnail: m.thumbnail }));
+  return meals.map((m) => ({
+    id: m.id,
+    name: m.name,
+    thumbnail: m.thumbnail,
+    category: m.category,
+    area: m.area,
+  }));
 }
 
 async function fetchBrowseResults({
@@ -76,11 +82,17 @@ async function fetchBrowseResults({
   const requests: Promise<MealPreview[]>[] = [];
 
   if (q) {
-    // searchByName returns full meal details — map down to preview shape so the
-    // result set has a consistent type for intersection.
+    // searchByName returns full meal details — carry category/area through
+    // so the preview cards can render chips without an extra lookup.
     requests.push(
       searchByName(q).then((list) =>
-        list.map((m) => ({ id: m.id, name: m.name, thumbnail: m.thumbnail })),
+        list.map((m) => ({
+          id: m.id,
+          name: m.name,
+          thumbnail: m.thumbnail,
+          category: m.category,
+          area: m.area,
+        })),
       ),
     );
   }

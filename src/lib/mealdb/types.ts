@@ -51,4 +51,12 @@ export type MealPreview = {
   id: string;
   name: string;
   thumbnail: string;
+  /**
+   * Optional — populated when the source call knew the category (either
+   * returned it in a full MealDetail or was itself a category filter).
+   * filter.php strips this by default, so it's injected by filterByCategory.
+   */
+  category?: string;
+  /** Same story for cuisine/area. */
+  area?: string;
 };

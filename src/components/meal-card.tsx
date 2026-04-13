@@ -2,9 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { MealPreview } from "@/lib/mealdb/types";
 
-type Props = { meal: Pick<MealPreview, "id" | "name" | "thumbnail"> };
+type Props = { meal: MealPreview };
 
 export function MealCard({ meal }: Props) {
+  const hasTags = meal.category || meal.area;
   return (
     <Link
       href={`/meals/${meal.id}`}
@@ -19,8 +20,24 @@ export function MealCard({ meal }: Props) {
           className="object-cover group-hover:scale-[1.02] transition-transform"
         />
       </div>
-      <div className="p-3">
-        <h3 className="text-sm font-medium leading-snug line-clamp-2">{meal.name}</h3>
+      <div className="p-3 space-y-1.5">
+        <h3 className="text-sm font-medium leading-snug line-clamp-2">
+          {meal.name}
+        </h3>
+        {hasTags && (
+          <div className="flex flex-wrap gap-1">
+            {meal.category && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                {meal.category}
+              </span>
+            )}
+            {meal.area && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                {meal.area}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </Link>
   );
