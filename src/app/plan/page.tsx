@@ -49,16 +49,33 @@ async function WeekView({ start }: { start: string }) {
   const prev = addDaysISO(start, -7);
   const next = addDaysISO(start, 7);
   const end = addDaysISO(start, 6);
+  const cooked = rows.filter((r) => r.cooked_at).length;
 
   return (
     <>
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Meal plan</h1>
-          <p className="text-sm text-zinc-500">{formatRange(start, end)}</p>
+          <p className="text-sm text-zinc-500">
+            {formatRange(start, end)}
+            {rows.length > 0 && (
+              <>
+                {" · "}
+                {rows.length} meal{rows.length === 1 ? "" : "s"} planned
+                {cooked > 0 && ` · ${cooked} cooked`}
+              </>
+            )}
+          </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           <ViewToggle active="week" />
+          <Link
+            href={`/shopping?from=${start}&to=${end}`}
+            className="text-sm px-3 py-1.5 rounded-full border border-black/10 dark:border-white/15 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            title="Generate a shopping list for this week"
+          >
+            🛒 Shopping list
+          </Link>
           <div className="flex gap-2">
             <Link
               href={`/plan?week=${prev}`}

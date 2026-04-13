@@ -39,3 +39,30 @@ export async function unscheduleMeal(id: string): Promise<void> {
   if (error) throw error;
   revalidatePath("/plan");
 }
+
+/**
+ * Toggles the cooked_at timestamp on a meal_plans row.
+ * - If null, sets to current timestamp.
+ * - If set, clears back to null.
+ */
+export async function toggleCooked(id: string): Promise<void> {
+  await requireUser();
+  const sb = await createSupabaseServerClient();
+
+  const { data, error: fetchErr } = await sb
+    .from("meal_plans")
+    .select("cooked_at")
+    .eq("id", id)
+    .single();
+  if (fetchErr) throw fetchErr;
+
+  const nextValue = data.cooked_at ? null : new Date().toISOString();
+  const { error } = await sb
+    .from("meal_plans")
+    .update({ cooked_at: nextValue })
+    .eq("id", id);
+  if (error) throw error;
+
+  revalidatePath("/plan");
+  revalidatePath("/");
+}

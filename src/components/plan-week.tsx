@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CookedButton } from "./cooked-button";
 import { UnscheduleButton } from "./unschedule-button";
 import {
   addDaysISO,
   MEAL_SLOTS,
+  todayISO,
   type MealPlanRow,
   type MealSlot,
 } from "@/lib/data/meal-plans";
@@ -22,7 +24,6 @@ const SLOT_LABELS: Record<MealSlot, string> = {
 };
 
 export async function PlanWeek({ startDate, rows }: Props) {
-  // Hydrate each distinct meal once.
   const uniqueIds = [...new Set(rows.map((r) => r.meal_id))];
   const meals = await Promise.all(uniqueIds.map((id) => lookupMeal(id)));
   const mealById = new Map(
@@ -31,11 +32,13 @@ export async function PlanWeek({ startDate, rows }: Props) {
       .map((m) => [m.id, m]),
   );
 
+  const today = todayISO();
   const days = Array.from({ length: 7 }, (_, i) => {
     const iso = addDaysISO(startDate, i);
     const date = new Date(`${iso}T00:00:00`);
     return {
       iso,
+      isToday: iso === today,
       weekday: date.toLocaleDateString(undefined, { weekday: "short" }),
       monthDay: date.toLocaleDateString(undefined, {
         month: "short",
@@ -55,12 +58,28 @@ export async function PlanWeek({ startDate, rows }: Props) {
         {/* Header row: empty corner + 7 day headers */}
         <div />
         {days.map((d) => (
-          <div
-            key={d.iso}
-            className="text-xs text-center text-zinc-600 dark:text-zinc-400"
-          >
-            <div className="font-medium">{d.weekday}</div>
-            <div className="text-zinc-400 dark:text-zinc-500">{d.monthDay}</div>
+          <div key={d.iso} className="text-xs text-center">
+            <div
+              className={
+                d.isToday
+                  ? "font-semibold text-zinc-900 dark:text-zinc-100"
+                  : "font-medium text-zinc-600 dark:text-zinc-400"
+              }
+            >
+              {d.weekday}
+            </div>
+            <div
+              className={
+                d.isToday
+                  ? "text-zinc-900 dark:text-zinc-100"
+                  : "text-zinc-400 dark:text-zinc-500 font-normal"
+              }
+            >
+              {d.monthDay}
+            </div>
+            {d.isToday && (
+              <div className="h-0.5 bg-zinc-900 dark:bg-zinc-100 mt-1 w-full rounded-full" />
+            )}
           </div>
         ))}
 
@@ -77,18 +96,34 @@ export async function PlanWeek({ startDate, rows }: Props) {
               (r) => r.planned_for === d.iso && r.meal_slot === slot,
             );
             const meal = row ? mealById.get(row.meal_id) : null;
+            const isCooked = Boolean(row?.cooked_at);
+
             return (
               <div
                 key={`${slot}-${d.iso}`}
-                className="aspect-square rounded-md border border-black/[.06] dark:border-white/10 bg-white dark:bg-zinc-950 relative overflow-hidden"
+                className={`aspect-square rounded-md relative overflow-hidden ${
+                  d.isToday
+                    ? "ring-1 ring-zinc-300 dark:ring-zinc-700"
+                    : ""
+                }`}
               >
                 {row && meal ? (
-                  <>
+                  <div
+                    className={`group absolute inset-0 bg-white dark:bg-zinc-950 border rounded-md overflow-hidden ${
+                      isCooked
+                        ? "border-emerald-300/80 dark:border-emerald-900"
+                        : "border-black/[.06] dark:border-white/10"
+                    }`}
+                  >
                     <Link
                       href={`/meals/${meal.id}`}
                       className="absolute inset-0 flex flex-col"
                     >
-                      <div className="relative flex-1 bg-zinc-100 dark:bg-zinc-900">
+                      <div
+                        className={`relative flex-1 bg-zinc-100 dark:bg-zinc-900 ${
+                          isCooked ? "opacity-75" : ""
+                        }`}
+                      >
                         <Image
                           src={meal.thumbnail}
                           alt=""
@@ -101,12 +136,21 @@ export async function PlanWeek({ startDate, rows }: Props) {
                         {meal.name}
                       </div>
                     </Link>
-                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 hover:opacity-100 transition">
+                    <div
+                      className={`absolute top-1 left-1 transition ${
+                        isCooked
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+                      }`}
+                    >
+                      <CookedButton planId={row.id} cooked={isCooked} />
+                    </div>
+                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
                       <UnscheduleButton planId={row.id} />
                     </div>
-                  </>
+                  </div>
                 ) : (
-                  <div className="h-full w-full border-dashed" />
+                  <div className="absolute inset-0 rounded-md border border-dashed border-black/10 dark:border-white/10" />
                 )}
               </div>
             );

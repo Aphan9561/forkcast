@@ -71,6 +71,7 @@ export type Database = {
       }
       meal_plans: {
         Row: {
+          cooked_at: string | null
           created_at: string
           id: string
           meal_id: string
@@ -80,6 +81,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cooked_at?: string | null
           created_at?: string
           id?: string
           meal_id: string
@@ -89,6 +91,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cooked_at?: string | null
           created_at?: string
           id?: string
           meal_id?: string

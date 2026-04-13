@@ -3,11 +3,13 @@
 import { useState, useTransition } from "react";
 import { generateFromPlan } from "@/app/actions/shopping";
 
-export function GenerateFromPlanForm() {
+type Props = { initialFrom?: string; initialTo?: string };
+
+export function GenerateFromPlanForm({ initialFrom, initialTo }: Props = {}) {
   const today = todayISO();
   const defaultEnd = addDaysISO(today, 6);
-  const [from, setFrom] = useState(today);
-  const [to, setTo] = useState(defaultEnd);
+  const [from, setFrom] = useState(initialFrom ?? today);
+  const [to, setTo] = useState(initialTo ?? defaultEnd);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 

@@ -11,6 +11,7 @@ export type MealPlanRow = {
   planned_for: string; // YYYY-MM-DD
   meal_slot: MealSlot;
   notes: string | null;
+  cooked_at: string | null;
 };
 
 export async function listWeek(startDate: string): Promise<MealPlanRow[]> {
@@ -19,13 +20,30 @@ export async function listWeek(startDate: string): Promise<MealPlanRow[]> {
   const end = addDaysISO(startDate, 6);
   const { data, error } = await sb
     .from("meal_plans")
-    .select("id, meal_id, planned_for, meal_slot, notes")
+    .select("id, meal_id, planned_for, meal_slot, notes, cooked_at")
     .gte("planned_for", startDate)
     .lte("planned_for", end)
     .order("planned_for", { ascending: true })
     .order("meal_slot", { ascending: true });
   if (error) throw error;
   return data ?? [];
+}
+
+/** Counts cooked meals for the current user in [from, to] (inclusive). */
+export async function countCookedInRange(
+  from: string,
+  to: string,
+): Promise<number> {
+  await requireUser();
+  const sb = await createSupabaseServerClient();
+  const { count, error } = await sb
+    .from("meal_plans")
+    .select("*", { count: "exact", head: true })
+    .gte("planned_for", from)
+    .lte("planned_for", to)
+    .not("cooked_at", "is", null);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 /** Adds `days` (may be negative) to a YYYY-MM-DD string. */
