@@ -1,6 +1,9 @@
+import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FavoriteButton } from "@/components/favorite-button";
+import { getFavoriteStatus } from "@/lib/data/favorites";
 import { lookupMeal } from "@/lib/mealdb/client";
 
 export default async function MealPage({
@@ -9,8 +12,10 @@ export default async function MealPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const meal = await lookupMeal(id);
+  const [meal, { userId }] = await Promise.all([lookupMeal(id), auth()]);
   if (!meal) notFound();
+
+  const favorited = userId ? await getFavoriteStatus(meal.id) : false;
 
   const youtubeId = meal.youtubeUrl ? extractYoutubeId(meal.youtubeUrl) : null;
 
@@ -44,7 +49,14 @@ export default async function MealPage({
               ))}
             </ul>
           )}
-          {/* Favorite + Schedule controls arrive in later increments. */}
+          <div className="flex gap-2">
+            <FavoriteButton
+              mealId={meal.id}
+              initialFavorited={favorited}
+              signedIn={Boolean(userId)}
+            />
+            {/* Schedule button arrives in a later increment. */}
+          </div>
         </div>
       </div>
 
