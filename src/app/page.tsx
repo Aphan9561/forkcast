@@ -3,27 +3,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { MealCard } from "@/components/meal-card";
 import { addDaysISO, todayISO } from "@/lib/data/meal-plans";
-import {
-  listCategoriesDetailed,
-  lookupMeal,
-  randomMeals,
-  type CategoryDetail,
-} from "@/lib/mealdb/client";
+import { lookupMeal, randomMeals } from "@/lib/mealdb/client";
 import type { MealDetail } from "@/lib/mealdb/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function Home() {
-  const [featured, categories, session] = await Promise.all([
-    randomMeals(6),
-    listCategoriesDetailed(),
-    auth(),
-  ]);
+  const [featured, session] = await Promise.all([randomMeals(6), auth()]);
 
   return (
     <main className="flex-1 w-full">
       {session.userId ? <Dashboard userId={session.userId} /> : <Hero />}
       <FeaturedMeals meals={featured} />
-      <Categories categories={categories} />
     </main>
   );
 }
@@ -181,7 +171,7 @@ function StatChip({ label, href }: { label: string; href: string }) {
 function FeaturedMeals({ meals }: { meals: MealDetail[] }) {
   if (meals.length === 0) return null;
   return (
-    <section className="max-w-5xl mx-auto px-6 py-10">
+    <section className="max-w-5xl mx-auto px-6 py-10 pb-16">
       <div className="flex items-baseline justify-between mb-4">
         <h2 className="text-lg font-semibold tracking-tight">Something to try</h2>
         <Link
@@ -197,35 +187,6 @@ function FeaturedMeals({ meals }: { meals: MealDetail[] }) {
             key={m.id}
             meal={{ id: m.id, name: m.name, thumbnail: m.thumbnail }}
           />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Categories({ categories }: { categories: CategoryDetail[] }) {
-  return (
-    <section className="max-w-5xl mx-auto px-6 pb-16">
-      <h2 className="text-lg font-semibold tracking-tight mb-4">Categories</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {categories.map((c) => (
-          <Link
-            key={c.id}
-            href={`/browse?category=${encodeURIComponent(c.name)}`}
-            className="group relative overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900 aspect-[4/3]"
-          >
-            <Image
-              src={c.thumbnail}
-              alt=""
-              fill
-              sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
-              className="object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3 text-white font-medium drop-shadow">
-              {c.name}
-            </div>
-          </Link>
         ))}
       </div>
     </section>
