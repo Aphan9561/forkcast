@@ -12,10 +12,50 @@ import type { TablesUpdate } from "@/lib/supabase/types";
 const MEASURED_UNIT = /\b(g|kg|mg|ml|l|tsp|tbsp|cup|cups|oz|lb|pound|pounds|gram|grams|kilogram|kilograms|liter|liters|litre|litres|milliliter|milliliters|teaspoon|teaspoons|tablespoon|tablespoons|ounce|ounces)\b/i;
 const ATTACHED_UNIT = /\d(g|kg|mg|ml|l|oz|lb)\b/i;
 
+/** Rounds to at most 2 decimal places (dodges 1/3+1/3 = 0.9999...). */
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function parseNum(s: string): number {
+  if (s.includes("/")) {
+    const [num, den] = s.split("/").map(Number);
+    return den ? num / den : 0;
+  }
+  return parseFloat(s);
+}
+
+/** Normalizes plural/long-form units to a compact canonical form. */
+function normalizeUnit(u: string): string {
+  const lower = u.toLowerCase();
+  const map: Record<string, string> = {
+    gram: "g",
+    grams: "g",
+    kilogram: "kg",
+    kilograms: "kg",
+    milliliter: "ml",
+    milliliters: "ml",
+    liter: "l",
+    liters: "l",
+    litre: "l",
+    litres: "l",
+    teaspoon: "tsp",
+    teaspoons: "tsp",
+    tablespoon: "tbsp",
+    tablespoons: "tbsp",
+    cups: "cup",
+    ounce: "oz",
+    ounces: "oz",
+    pound: "lb",
+    pounds: "lb",
+  };
+  return map[lower] ?? lower;
+}
+
 /**
- * Parses a measure string into a numeric count if it represents a simple
- * countable quantity (e.g., "2", "2 eggs", "1 large onion"). Returns null
- * when the measure uses a real measurement unit or isn't parseable.
+ * Parses a measure string into a simple count if countable (e.g., "2",
+ * "2 eggs", "1 large onion"). Returns null when the measure uses a real
+ * measurement unit or isn't parseable.
  */
 function parseCount(raw: string): number | null {
   const trimmed = raw.trim();
@@ -23,22 +63,41 @@ function parseCount(raw: string): number | null {
   if (MEASURED_UNIT.test(trimmed)) return null;
   if (ATTACHED_UNIT.test(trimmed)) return null;
 
-  // Leading number: integer, decimal, or simple fraction.
   const m = trimmed.match(/^(\d+(?:\.\d+)?|\d+\/\d+)(?:\s|$|[^\d\s])/);
   if (!m) return null;
-  if (m[1].includes("/")) {
-    const [num, den] = m[1].split("/").map(Number);
-    return den ? num / den : null;
-  }
-  return parseFloat(m[1]);
+  return parseNum(m[1]);
+}
+
+/**
+ * Parses a measure string with an explicit measurement unit
+ * (e.g., "500g", "500 g", "1/2 cup", "1 tsp").
+ */
+function parseMeasurement(
+  raw: string,
+): { value: number; unit: string } | null {
+  const t = raw.trim();
+  if (!t) return null;
+  const m = t.match(
+    /^(\d+(?:\.\d+)?|\d+\/\d+)\s*(g|kg|mg|ml|l|tsp|tbsp|cup|cups|oz|lb|pound|pounds|gram|grams|liter|liters|litre|litres|milliliter|milliliters|teaspoon|teaspoons|tablespoon|tablespoons|ounce|ounces|kilogram|kilograms)\b/i,
+  );
+  if (!m) return null;
+  return { value: parseNum(m[1]), unit: normalizeUnit(m[2]) };
 }
 
 /**
  * Aggregates multiple measure strings for the same ingredient.
- * - If every measure parses as a simple count, sum them and store as
- *   { quantity: N, unit: null } so the UI renders just "3".
- * - Otherwise fall back to concatenating the raw strings (real units are
- *   hard to sum cleanly, so keep the original measures visible).
+ *
+ * 1. All countable ("2 eggs", "1 onion") → sum to a single number.
+ *    Stored as { quantity: 3, unit: null }, rendered as "3".
+ *
+ * 2. All parse as value+unit ("200g", "1/2 cup", "1 tsp"):
+ *    Group by normalized unit and sum each.
+ *    - Single unit across all measures  → "300 g" (quantity: 300, unit: "g")
+ *    - Mixed units                       → "300 g + 1 cup" (quantity: null)
+ *    Much cleaner than verbatim concat.
+ *
+ * 3. Anything unparseable ("to taste", "a pinch") → fall back to raw
+ *    concatenation so the user at least sees the original measures.
  */
 function aggregateMeasures(measures: string[]): {
   quantity: number | null;
@@ -46,14 +105,32 @@ function aggregateMeasures(measures: string[]): {
 } {
   if (measures.length === 0) return { quantity: null, unit: null };
 
+  // 1. All countable
   const counts = measures.map(parseCount);
   if (counts.every((c): c is number => c !== null)) {
     const sum = counts.reduce((a, b) => a + b, 0);
-    // Round to 2 decimals to avoid floating-point ugliness (e.g., 1/3 + 1/3).
-    const rounded = Math.round(sum * 100) / 100;
-    return { quantity: rounded, unit: null };
+    return { quantity: round2(sum), unit: null };
   }
 
+  // 2. All have explicit measurement units
+  const parsed = measures.map(parseMeasurement);
+  if (parsed.every((p): p is { value: number; unit: string } => p !== null)) {
+    const byUnit = new Map<string, number>();
+    for (const p of parsed) {
+      byUnit.set(p.unit, (byUnit.get(p.unit) ?? 0) + p.value);
+    }
+    const entries = [...byUnit.entries()];
+    if (entries.length === 1) {
+      const [unit, value] = entries[0];
+      return { quantity: round2(value), unit };
+    }
+    return {
+      quantity: null,
+      unit: entries.map(([u, v]) => `${round2(v)} ${u}`).join(" + "),
+    };
+  }
+
+  // 3. Fallback: preserve originals verbatim
   return { quantity: null, unit: measures.join(" + ") };
 }
 
