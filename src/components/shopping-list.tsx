@@ -5,6 +5,7 @@ import {
   addShoppingItem,
   clearChecked,
   deleteShoppingItem,
+  mergeDuplicates,
   toggleChecked,
 } from "@/app/actions/shopping";
 import type { ShoppingItemRow } from "@/lib/data/shopping";
@@ -21,6 +22,18 @@ export function ShoppingList({ items, pantryNames = [] }: Props) {
   const unchecked = items.filter((i) => !i.checked);
   const checked = items.filter((i) => i.checked);
   const pantrySet = new Set(pantryNames);
+
+  // Count duplicate unchecked names so we can enable/disable the merge button.
+  const duplicateCount = (() => {
+    const counts = new Map<string, number>();
+    for (const item of unchecked) {
+      const key = item.name.toLowerCase();
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let extras = 0;
+    for (const n of counts.values()) if (n > 1) extras += n - 1;
+    return extras;
+  })();
 
   function onAdd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -70,6 +83,27 @@ export function ShoppingList({ items, pantryNames = [] }: Props) {
           Add
         </button>
       </form>
+
+      {duplicateCount > 0 && (
+        <div className="flex items-center justify-between gap-2 p-2 px-3 mb-4 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-900 dark:text-amber-200">
+          <span>
+            {duplicateCount} duplicate item
+            {duplicateCount === 1 ? "" : "s"} detected.
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              startTransition(async () => {
+                await mergeDuplicates();
+              })
+            }
+            disabled={pending}
+            className="font-medium hover:underline disabled:opacity-60"
+          >
+            Merge now
+          </button>
+        </div>
+      )}
 
       {unchecked.length === 0 && checked.length === 0 && (
         <p className="text-sm text-zinc-500 py-8">

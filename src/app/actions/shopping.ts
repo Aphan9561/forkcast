@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { lookupMeal } from "@/lib/mealdb/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import type { TablesUpdate } from "@/lib/supabase/types";
 
 // Patterns that indicate a measurement unit (so "2 eggs" is countable but
 // "200g flour" / "1/2 cup milk" / "1 tsp salt" aren't).
@@ -57,6 +57,76 @@ function aggregateMeasures(measures: string[]): {
   return { quantity: null, unit: measures.join(" + ") };
 }
 
+/**
+ * Reverses aggregateMeasures: turns a stored (quantity, unit) row back into
+ * measure strings so we can re-aggregate with new incoming measures.
+ * Unit may be a " + "-concatenated list from a previous aggregation — split
+ * it back out so sums work.
+ */
+function rowToMeasures(row: {
+  quantity: number | null;
+  unit: string | null;
+}): string[] {
+  if (row.quantity != null) {
+    return row.unit ? [`${row.quantity} ${row.unit}`] : [`${row.quantity}`];
+  }
+  if (row.unit) {
+    return row.unit
+      .split(" + ")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+/**
+ * Core upsert: if an unchecked row with the same name exists, merges the
+ * new measures in; otherwise inserts. Name comparison is case-insensitive
+ * (via ilike). Checked-off rows are left alone — they represent a past
+ * shopping trip.
+ */
+async function upsertShoppingItem(
+  sb: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+  input: {
+    name: string;
+    measures: string[];
+    source_meal_id?: string | null;
+  },
+): Promise<{ inserted: boolean }> {
+  const { data: existing, error: existingErr } = await sb
+    .from("shopping_list_items")
+    .select("id, quantity, unit")
+    .ilike("name", input.name)
+    .eq("checked", false)
+    .limit(1)
+    .maybeSingle();
+  if (existingErr) throw existingErr;
+
+  if (existing) {
+    const combined = [...rowToMeasures(existing), ...input.measures];
+    const agg = aggregateMeasures(combined);
+    const { error } = await sb
+      .from("shopping_list_items")
+      .update({ quantity: agg.quantity, unit: agg.unit })
+      .eq("id", existing.id);
+    if (error) throw error;
+    return { inserted: false };
+  }
+
+  const agg = aggregateMeasures(input.measures);
+  const { error } = await sb.from("shopping_list_items").insert({
+    user_id: userId,
+    name: input.name,
+    quantity: agg.quantity,
+    unit: agg.unit,
+    checked: false,
+    source_meal_id: input.source_meal_id ?? null,
+  });
+  if (error) throw error;
+  return { inserted: true };
+}
+
 export async function addShoppingItem(input: {
   name: string;
   quantity?: number | null;
@@ -67,13 +137,20 @@ export async function addShoppingItem(input: {
 
   const userId = await requireUser();
   const sb = await createSupabaseServerClient();
-  const { error } = await sb.from("shopping_list_items").insert({
-    user_id: userId,
-    name,
-    quantity: input.quantity ?? null,
-    unit: (input.unit ?? "").trim() || null,
-  });
-  if (error) throw error;
+
+  // Convert the user's input to measure strings so upsert can reason about it.
+  const measures: string[] = [];
+  if (input.quantity != null) {
+    measures.push(
+      input.unit?.trim()
+        ? `${input.quantity} ${input.unit.trim()}`
+        : `${input.quantity}`,
+    );
+  } else if (input.unit?.trim()) {
+    measures.push(input.unit.trim());
+  }
+
+  await upsertShoppingItem(sb, userId, { name, measures });
   revalidatePath("/shopping");
 }
 
@@ -150,7 +227,7 @@ export async function clearChecked(): Promise<void> {
 export async function generateFromPlan(range: {
   from: string;
   to: string;
-}): Promise<{ added: number }> {
+}): Promise<{ added: number; merged: number }> {
   const userId = await requireUser();
   const sb = await createSupabaseServerClient();
 
@@ -160,7 +237,7 @@ export async function generateFromPlan(range: {
     .gte("planned_for", range.from)
     .lte("planned_for", range.to);
   if (plansErr) throw plansErr;
-  if (!plans || plans.length === 0) return { added: 0 };
+  if (!plans || plans.length === 0) return { added: 0, merged: 0 };
 
   // Fetch each distinct meal once; Next's fetch cache would dedupe anyway,
   // but uniquifying here keeps lookups O(N_distinct) not O(N_plans).
@@ -211,27 +288,77 @@ export async function generateFromPlan(range: {
     if (pantrySet.has(key)) agg.delete(key);
   }
 
-  if (agg.size === 0) return { added: 0 };
+  if (agg.size === 0) return { added: 0, merged: 0 };
 
-  const inserts: TablesInsert<"shopping_list_items">[] = [...agg.values()].map(
-    (a) => {
-      const amount = aggregateMeasures(a.measures);
-      return {
-        user_id: userId,
-        name: a.name,
-        quantity: amount.quantity,
-        unit: amount.unit,
-        checked: false,
-        source_meal_id: a.source_meal_id,
-      };
-    },
-  );
-
-  const { error: insertErr } = await sb
-    .from("shopping_list_items")
-    .insert(inserts);
-  if (insertErr) throw insertErr;
+  // Upsert each ingredient so a second "generate" on an overlapping range
+  // merges into existing rows rather than spawning duplicates.
+  let inserted = 0;
+  let merged = 0;
+  for (const a of agg.values()) {
+    const result = await upsertShoppingItem(sb, userId, {
+      name: a.name,
+      measures: a.measures,
+      source_meal_id: a.source_meal_id,
+    });
+    if (result.inserted) inserted++;
+    else merged++;
+  }
 
   revalidatePath("/shopping");
-  return { added: inserts.length };
+  return { added: inserted, merged };
+}
+
+/**
+ * Cleanup pass for existing duplicates. Groups unchecked rows by
+ * case-insensitive name, keeps the oldest row as the canonical one,
+ * merges all measures into it, and deletes the rest.
+ */
+export async function mergeDuplicates(): Promise<{ merged: number }> {
+  await requireUser();
+  const sb = await createSupabaseServerClient();
+
+  const { data: rows, error } = await sb
+    .from("shopping_list_items")
+    .select("id, name, quantity, unit, created_at")
+    .eq("checked", false)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  if (!rows || rows.length === 0) return { merged: 0 };
+
+  const groups = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const key = row.name.toLowerCase();
+    const bucket = groups.get(key) ?? [];
+    bucket.push(row);
+    groups.set(key, bucket);
+  }
+
+  let mergedCount = 0;
+  for (const group of groups.values()) {
+    if (group.length <= 1) continue;
+    const [keeper, ...others] = group;
+
+    const measures = group.flatMap((r) => rowToMeasures(r));
+    const agg = aggregateMeasures(measures);
+
+    const { error: updErr } = await sb
+      .from("shopping_list_items")
+      .update({ quantity: agg.quantity, unit: agg.unit })
+      .eq("id", keeper.id);
+    if (updErr) throw updErr;
+
+    const { error: delErr } = await sb
+      .from("shopping_list_items")
+      .delete()
+      .in(
+        "id",
+        others.map((o) => o.id),
+      );
+    if (delErr) throw delErr;
+
+    mergedCount += others.length;
+  }
+
+  revalidatePath("/shopping");
+  return { merged: mergedCount };
 }
