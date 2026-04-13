@@ -25,6 +25,21 @@ export async function searchByName(query: string): Promise<MealDetail[]> {
   return (data.meals ?? []).map(normalizeMeal);
 }
 
+/**
+ * Fetches all meals whose name starts with the given letter. Returns full
+ * meal details (not the stripped preview shape). Used to populate the browse
+ * page with "discover"-style results when no filters are active.
+ */
+export async function searchByFirstLetter(letter: string): Promise<MealDetail[]> {
+  const ch = letter.slice(0, 1).toLowerCase();
+  if (!/^[a-z]$/.test(ch)) return [];
+  const data = await fetchMealDb<{ meals: RawMeal[] | null }>(
+    `/search.php?f=${ch}`,
+    SEARCH_CACHE,
+  );
+  return (data.meals ?? []).map(normalizeMeal);
+}
+
 export async function lookupMeal(id: string): Promise<MealDetail | null> {
   const data = await fetchMealDb<{ meals: RawMeal[] | null }>(
     `/lookup.php?i=${encodeURIComponent(id)}`,

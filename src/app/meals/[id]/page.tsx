@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BackButton } from "@/components/back-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { SchedulePicker } from "@/components/schedule-picker";
 import { getFavoriteStatus } from "@/lib/data/favorites";
@@ -22,6 +23,9 @@ export default async function MealPage({
 
   return (
     <article className="flex-1 max-w-4xl mx-auto px-6 py-8 w-full">
+      <div className="mb-6">
+        <BackButton />
+      </div>
       <div className="flex flex-col md:flex-row gap-8 mb-8">
         <div className="relative aspect-square w-full md:w-64 md:shrink-0 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-900">
           <Image

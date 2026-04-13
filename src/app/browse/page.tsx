@@ -4,6 +4,7 @@ import {
   intersectMeals,
   listAreas,
   listCategories,
+  searchByFirstLetter,
   searchByName,
 } from "@/lib/mealdb/client";
 import type { MealPreview } from "@/lib/mealdb/types";
@@ -18,14 +19,15 @@ export default async function BrowsePage({
   searchParams: Promise<SearchParams>;
 }) {
   const { q, category, area } = await searchParams;
+  const activeFilters = [q, category, area].filter(Boolean).length;
 
   const [categories, areas, meals] = await Promise.all([
     listCategories(),
     listAreas(),
-    fetchBrowseResults({ q, category, area }),
+    activeFilters > 0
+      ? fetchBrowseResults({ q, category, area })
+      : fetchDiscoverMeals(),
   ]);
-
-  const activeFilters = [q, category, area].filter(Boolean).length;
 
   return (
     <div className="flex-1 flex flex-col lg:flex-row gap-8 px-6 py-8 max-w-7xl mx-auto w-full">
@@ -33,23 +35,37 @@ export default async function BrowsePage({
         <SidebarFilters categories={categories} areas={areas} />
       </div>
       <div className="flex-1 min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight mb-1">Browse meals</h1>
+        <h1 className="text-xl font-semibold tracking-tight mb-1">
+          {activeFilters > 0 ? "Browse meals" : "Discover meals"}
+        </h1>
         <p className="text-sm text-zinc-500 mb-6">
           {activeFilters > 0
             ? `${meals.length} result${meals.length === 1 ? "" : "s"}`
-            : "Pick a category or search to find something to make."}
+            : "Search or filter on the left to narrow it down."}
         </p>
         <MealGrid
           meals={meals}
           emptyMessage={
             activeFilters === 0
-              ? "Choose a category or search on the left to get started."
+              ? "Couldn't load meals right now. Try searching instead."
               : "No meals match those filters."
           }
         />
       </div>
     </div>
   );
+}
+
+/**
+ * Picks a letter of the alphabet seeded by the current hour (UTC), so the
+ * discover set rotates hourly while Next's fetch cache still hits within an
+ * hour. First-letter search returns ~20 full meals per call.
+ */
+async function fetchDiscoverMeals(): Promise<MealPreview[]> {
+  const hour = new Date().getUTCHours();
+  const letter = "abcdefghijklmnopqrstuvwxyz"[hour % 26];
+  const meals = await searchByFirstLetter(letter);
+  return meals.map((m) => ({ id: m.id, name: m.name, thumbnail: m.thumbnail }));
 }
 
 async function fetchBrowseResults({
