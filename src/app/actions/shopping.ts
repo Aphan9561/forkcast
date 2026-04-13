@@ -6,6 +6,57 @@ import { lookupMeal } from "@/lib/mealdb/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 
+// Patterns that indicate a measurement unit (so "2 eggs" is countable but
+// "200g flour" / "1/2 cup milk" / "1 tsp salt" aren't).
+// Matches both space-separated ("500 g") and attached ("500g") forms.
+const MEASURED_UNIT = /\b(g|kg|mg|ml|l|tsp|tbsp|cup|cups|oz|lb|pound|pounds|gram|grams|kilogram|kilograms|liter|liters|litre|litres|milliliter|milliliters|teaspoon|teaspoons|tablespoon|tablespoons|ounce|ounces)\b/i;
+const ATTACHED_UNIT = /\d(g|kg|mg|ml|l|oz|lb)\b/i;
+
+/**
+ * Parses a measure string into a numeric count if it represents a simple
+ * countable quantity (e.g., "2", "2 eggs", "1 large onion"). Returns null
+ * when the measure uses a real measurement unit or isn't parseable.
+ */
+function parseCount(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (MEASURED_UNIT.test(trimmed)) return null;
+  if (ATTACHED_UNIT.test(trimmed)) return null;
+
+  // Leading number: integer, decimal, or simple fraction.
+  const m = trimmed.match(/^(\d+(?:\.\d+)?|\d+\/\d+)(?:\s|$|[^\d\s])/);
+  if (!m) return null;
+  if (m[1].includes("/")) {
+    const [num, den] = m[1].split("/").map(Number);
+    return den ? num / den : null;
+  }
+  return parseFloat(m[1]);
+}
+
+/**
+ * Aggregates multiple measure strings for the same ingredient.
+ * - If every measure parses as a simple count, sum them and store as
+ *   { quantity: N, unit: null } so the UI renders just "3".
+ * - Otherwise fall back to concatenating the raw strings (real units are
+ *   hard to sum cleanly, so keep the original measures visible).
+ */
+function aggregateMeasures(measures: string[]): {
+  quantity: number | null;
+  unit: string | null;
+} {
+  if (measures.length === 0) return { quantity: null, unit: null };
+
+  const counts = measures.map(parseCount);
+  if (counts.every((c): c is number => c !== null)) {
+    const sum = counts.reduce((a, b) => a + b, 0);
+    // Round to 2 decimals to avoid floating-point ugliness (e.g., 1/3 + 1/3).
+    const rounded = Math.round(sum * 100) / 100;
+    return { quantity: rounded, unit: null };
+  }
+
+  return { quantity: null, unit: measures.join(" + ") };
+}
+
 export async function addShoppingItem(input: {
   name: string;
   quantity?: number | null;
@@ -163,14 +214,17 @@ export async function generateFromPlan(range: {
   if (agg.size === 0) return { added: 0 };
 
   const inserts: TablesInsert<"shopping_list_items">[] = [...agg.values()].map(
-    (a) => ({
-      user_id: userId,
-      name: a.name,
-      quantity: null,
-      unit: a.measures.length > 0 ? a.measures.join(" + ") : null,
-      checked: false,
-      source_meal_id: a.source_meal_id,
-    }),
+    (a) => {
+      const amount = aggregateMeasures(a.measures);
+      return {
+        user_id: userId,
+        name: a.name,
+        quantity: amount.quantity,
+        unit: amount.unit,
+        checked: false,
+        source_meal_id: a.source_meal_id,
+      };
+    },
   );
 
   const { error: insertErr } = await sb
