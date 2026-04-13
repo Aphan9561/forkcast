@@ -217,29 +217,41 @@ function Recommended({ meals }: { meals: MealPreview[] }) {
 function FeaturedMeals({ meals }: { meals: MealDetail[] }) {
   if (meals.length === 0) return null;
   return (
-    <section className="max-w-5xl mx-auto px-6 py-10 pb-16">
-      <div className="flex items-baseline justify-between mb-4">
-        <h2 className="text-lg font-semibold tracking-tight">Something to try</h2>
-        <Link
-          href="/browse"
-          className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white underline-offset-2 hover:underline"
-        >
-          Browse all →
-        </Link>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {meals.map((m) => (
-          <MealCard
-            key={m.id}
-            meal={{
-              id: m.id,
-              name: m.name,
-              thumbnail: m.thumbnail,
-              category: m.category,
-              area: m.area,
-            }}
-          />
-        ))}
+    <section className="relative border-y border-black/5 dark:border-white/10 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-rose-950/20">
+      <div className="max-w-5xl mx-auto px-6 py-14">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div>
+            <div className="inline-flex items-center gap-2 text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-white/70 dark:bg-zinc-950/40 rounded-full px-2.5 py-0.5 mb-2 border border-amber-200/60 dark:border-amber-900/40">
+              <span aria-hidden>✨</span> Fresh picks
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+              Something new to try
+            </h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+              Six random recipes — refreshed every time you reload.
+            </p>
+          </div>
+          <Link
+            href="/browse"
+            className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white self-end underline-offset-2 hover:underline"
+          >
+            Browse all →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {meals.map((m) => (
+            <MealCard
+              key={m.id}
+              meal={{
+                id: m.id,
+                name: m.name,
+                thumbnail: m.thumbnail,
+                category: m.category,
+                area: m.area,
+              }}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
