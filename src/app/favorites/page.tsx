@@ -3,6 +3,7 @@ import Link from "next/link";
 import { TagPicker } from "@/components/tag-picker";
 import { listFavoritesWithTags, listMyTags } from "@/lib/data/tags";
 import { lookupMeal } from "@/lib/mealdb/client";
+import { PRESET_TAGS } from "@/lib/preset-tags";
 
 export default async function FavoritesPage() {
   const [favorites, allTags] = await Promise.all([
@@ -66,6 +67,7 @@ export default async function FavoritesPage() {
                   mealId={f.meal_id}
                   assigned={f.tags}
                   allTags={allTags}
+                  presets={PRESET_TAGS}
                 />
               </div>
             </li>

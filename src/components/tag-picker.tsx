@@ -9,9 +9,11 @@ type Props = {
   mealId: string;
   assigned: Tag[];
   allTags: Tag[];
+  /** Preset tag names shown as suggestions. Clicking one creates + assigns. */
+  presets?: readonly string[];
 };
 
-export function TagPicker({ mealId, assigned, allTags }: Props) {
+export function TagPicker({ mealId, assigned, allTags, presets = [] }: Props) {
   const [adding, setAdding] = useState(false);
   const [input, setInput] = useState("");
   const [pending, startTransition] = useTransition();
@@ -29,6 +31,19 @@ export function TagPicker({ mealId, assigned, allTags }: Props) {
     (t) => t.name.toLowerCase() === typed.toLowerCase(),
   );
 
+  // Presets that aren't already used for this favorite (either assigned or
+  // exist as a user-created tag that's in `available`, which would already be
+  // listed in `suggestion`).
+  const assignedNames = new Set(assigned.map((t) => t.name.toLowerCase()));
+  const allTagNames = new Set(allTags.map((t) => t.name.toLowerCase()));
+  const presetSuggestions = presets.filter((name) => {
+    const lower = name.toLowerCase();
+    if (assignedNames.has(lower)) return false;
+    if (allTagNames.has(lower)) return false; // already shown in `suggestion`
+    if (typed && !lower.includes(typed.toLowerCase())) return false;
+    return true;
+  });
+
   function closeEditor() {
     setAdding(false);
     setInput("");
@@ -39,10 +54,11 @@ export function TagPicker({ mealId, assigned, allTags }: Props) {
     closeEditor();
   }
 
-  function onCreate() {
-    if (!typed) return;
+  function onCreate(name: string = typed) {
+    const value = name.trim();
+    if (!value) return;
     startTransition(async () => {
-      const tag = await createTag(typed);
+      const tag = await createTag(value);
       await assignTag(mealId, tag.id);
     });
     closeEditor();
@@ -104,8 +120,10 @@ export function TagPicker({ mealId, assigned, allTags }: Props) {
             placeholder="tag name"
             className="text-xs rounded border border-black/15 dark:border-white/20 px-2 py-0.5 bg-transparent w-32 outline-none focus:border-black/40 dark:focus:border-white/50"
           />
-          {(suggestion.length > 0 || (typed && !exactExists)) && (
-            <ul className="absolute z-10 top-full left-0 mt-1 w-44 bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/15 rounded-md shadow-md text-xs">
+          {(suggestion.length > 0 ||
+            presetSuggestions.length > 0 ||
+            (typed && !exactExists)) && (
+            <ul className="absolute z-10 top-full left-0 mt-1 w-48 bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/15 rounded-md shadow-md text-xs">
               {suggestion.map((tag) => (
                 <li key={tag.id}>
                   <button
@@ -118,12 +136,37 @@ export function TagPicker({ mealId, assigned, allTags }: Props) {
                   </button>
                 </li>
               ))}
+              {presetSuggestions.length > 0 && (
+                <>
+                  {suggestion.length > 0 && (
+                    <li
+                      aria-hidden
+                      className="border-t border-black/5 dark:border-white/10"
+                    />
+                  )}
+                  <li className="px-2 pt-1.5 pb-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
+                    Suggested
+                  </li>
+                  {presetSuggestions.map((name) => (
+                    <li key={name}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => onCreate(name)}
+                        className="w-full text-left px-2 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                      >
+                        {name}
+                      </button>
+                    </li>
+                  ))}
+                </>
+              )}
               {typed && !exactExists && (
                 <li className="border-t border-black/5 dark:border-white/10">
                   <button
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={onCreate}
+                    onClick={() => onCreate()}
                     className="w-full text-left px-2 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                   >
                     Create &ldquo;{typed}&rdquo;
