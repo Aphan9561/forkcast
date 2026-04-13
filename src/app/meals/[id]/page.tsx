@@ -40,7 +40,7 @@ export default async function MealPage({
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight mb-2">{meal.name}</h1>
+          <h1 className="text-2xl font-display font-semibold tracking-tight mb-2">{meal.name}</h1>
           <p className="text-sm text-zinc-500 mb-4">
             {meal.category} · {meal.area}
           </p>

@@ -35,7 +35,7 @@ export default async function BrowsePage({
         <SidebarFilters categories={categories} areas={areas} />
       </div>
       <div className="flex-1 min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight mb-1">
+        <h1 className="text-xl font-display font-semibold tracking-tight mb-1">
           {activeFilters > 0 ? "Browse meals" : "Discover meals"}
         </h1>
         <p className="text-sm text-zinc-500 mb-6">

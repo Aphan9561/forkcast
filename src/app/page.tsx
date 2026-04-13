@@ -35,7 +35,7 @@ function Hero() {
   return (
     <section className="border-b border-black/5 dark:border-white/10">
       <div className="max-w-5xl mx-auto px-6 py-16 text-center">
-        <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-4">
+        <h1 className="text-4xl sm:text-5xl font-display font-semibold tracking-tight mb-4">
           Plan your week&apos;s meals.
         </h1>
         <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-6 max-w-xl mx-auto">
@@ -45,7 +45,7 @@ function Hero() {
         <div className="flex gap-3 justify-center flex-wrap">
           <Link
             href="/browse"
-            className="inline-flex items-center justify-center rounded-full bg-foreground text-background px-5 h-10 text-sm font-medium hover:opacity-90"
+            className="inline-flex items-center justify-center rounded-full bg-accent text-white px-5 h-10 text-sm font-medium hover:opacity-90"
           >
             Browse meals
           </Link>
@@ -106,7 +106,7 @@ async function Dashboard({ userId: _userId }: { userId: string }) {
       <div className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight mb-1">
+            <h1 className="text-2xl font-display font-semibold tracking-tight mb-1">
               Hi, {greeting}.
             </h1>
             <p className="text-sm text-zinc-500">
@@ -232,7 +232,7 @@ function Features() {
   return (
     <section className="max-w-5xl mx-auto px-6 py-16">
       <div className="text-center mb-12">
-        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-3">
+        <h2 className="text-2xl sm:text-3xl font-display font-semibold tracking-tight mb-3">
           Everything you need to cook more at home.
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto">
@@ -264,7 +264,7 @@ function FinalCTA() {
   return (
     <section className="border-t border-black/5 dark:border-white/10 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-rose-950/20">
       <div className="max-w-3xl mx-auto px-6 py-16 text-center">
-        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-3">
+        <h2 className="text-2xl sm:text-3xl font-display font-semibold tracking-tight mb-3">
           Ready to plan your week?
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
@@ -288,7 +288,7 @@ function Recommended({ meals }: { meals: MealPreview[] }) {
   return (
     <section className="max-w-5xl mx-auto px-6 py-10 border-b border-black/5 dark:border-white/10">
       <div className="flex items-baseline justify-between mb-1">
-        <h2 className="text-lg font-semibold tracking-tight">
+        <h2 className="text-lg font-display font-semibold tracking-tight">
           Recommended for you
         </h2>
         <Link

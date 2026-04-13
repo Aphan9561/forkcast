@@ -55,7 +55,7 @@ async function WeekView({ start }: { start: string }) {
     <>
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Meal plan</h1>
+          <h1 className="text-xl font-display font-semibold tracking-tight">Meal plan</h1>
           <p className="text-sm text-zinc-500">
             {formatRange(start, end)}
             {rows.length > 0 && (
@@ -111,7 +111,7 @@ function MonthView({ month }: { month: string }) {
     <>
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Meal plan</h1>
+          <h1 className="text-xl font-display font-semibold tracking-tight">Meal plan</h1>
           <p className="text-sm text-zinc-500">{formatMonth(month)}</p>
         </div>
         <div className="flex gap-2 items-center">
@@ -151,7 +151,7 @@ function ViewToggle({ active }: { active: "week" | "month" }) {
   const base =
     "text-sm px-3 py-1.5 rounded-full transition border";
   const activeCls =
-    "bg-foreground text-background border-transparent";
+    "bg-accent text-white border-transparent";
   const inactiveCls =
     "border-black/10 dark:border-white/15 hover:bg-zinc-50 dark:hover:bg-zinc-900";
   return (

@@ -24,7 +24,7 @@ export default async function ShoppingPage({
 
   return (
     <div className="flex-1 max-w-3xl mx-auto px-6 py-8 w-full">
-      <h1 className="text-xl font-semibold tracking-tight mb-1">Shopping list</h1>
+      <h1 className="text-xl font-display font-semibold tracking-tight mb-1">Shopping list</h1>
       <p className="text-sm text-zinc-500 mb-6">
         {items.length === 0
           ? "Pull ingredients from your meal plan, or add items by hand."

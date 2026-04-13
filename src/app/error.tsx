@@ -22,7 +22,7 @@ export default function Error({
       <button
         type="button"
         onClick={reset}
-        className="rounded-full bg-foreground text-background px-4 h-9 text-sm font-medium hover:opacity-90"
+        className="rounded-full bg-accent text-white px-4 h-9 text-sm font-medium hover:opacity-90"
       >
         Try again
       </button>

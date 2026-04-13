@@ -22,7 +22,10 @@ export function SiteNav() {
   return (
     <header className="flex items-center justify-between gap-4 px-6 py-3 border-b border-black/5 dark:border-white/10">
       <div className="flex items-center gap-6">
-        <Link href="/" className="font-semibold tracking-tight">
+        <Link
+          href="/"
+          className="font-display text-xl font-semibold tracking-tight"
+        >
           Forkcast
         </Link>
         <nav className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-400">

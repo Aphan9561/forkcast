@@ -23,7 +23,7 @@ export default async function FavoritesPage() {
 
   return (
     <div className="flex-1 max-w-5xl mx-auto px-6 py-8 w-full">
-      <h1 className="text-xl font-semibold tracking-tight mb-1">Your favorites</h1>
+      <h1 className="text-xl font-display font-semibold tracking-tight mb-1">Your favorites</h1>
       <p className="text-sm text-zinc-500 mb-6">
         {hydrated.length === 0
           ? "Nothing saved yet."

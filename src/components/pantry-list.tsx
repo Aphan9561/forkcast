@@ -54,7 +54,7 @@ export function PantryList({ items }: { items: PantryItemRow[] }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-foreground text-background px-4 h-9 text-sm font-medium hover:opacity-90 disabled:opacity-60"
+          className="rounded-full bg-accent text-white px-4 h-9 text-sm font-medium hover:opacity-90 disabled:opacity-60"
         >
           Add
         </button>
@@ -125,7 +125,7 @@ function PantryRow({ item }: { item: PantryItemRow }) {
           <button
             type="submit"
             disabled={pending}
-            className="text-sm px-3 py-1.5 rounded-full bg-foreground text-background hover:opacity-90"
+            className="text-sm px-3 py-1.5 rounded-full bg-accent text-white hover:opacity-90"
           >
             Save
           </button>

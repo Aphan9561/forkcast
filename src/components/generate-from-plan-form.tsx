@@ -56,7 +56,7 @@ export function GenerateFromPlanForm({ initialFrom, initialTo }: Props = {}) {
       <button
         type="submit"
         disabled={pending || !from || !to}
-        className="rounded-full bg-foreground text-background px-4 h-9 text-sm font-medium hover:opacity-90 disabled:opacity-60"
+        className="rounded-full bg-accent text-white px-4 h-9 text-sm font-medium hover:opacity-90 disabled:opacity-60"
       >
         {pending ? "Generating…" : "Generate from plan"}
       </button>
